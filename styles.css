@@ -476,3 +476,42 @@ button{font:inherit;color:inherit;}
 @media (prefers-reduced-motion:reduce){
   *{transition-duration:.01ms !important;animation-duration:.01ms !important;}
 }
+
+[data-theme="lagoon"]{--accent:#50e4d1;--accent-soft:#c5fff4;--accent-deep:#093d4c;--warm:#c5fff4;--page:radial-gradient(ellipse at 12% 90%,#176d77,transparent 60%),linear-gradient(145deg,#03171f,#0c3943);--ocean-a:#093d4c;--ocean-b:#03171f;--ocean-c:#03171f;--land:#093d4c;--land-line:#50e4d1;--seat:linear-gradient(#093d4c,#03171f);--seat-win:linear-gradient(color-mix(in srgb,#50e4d1 45%,#093d4c),#093d4c);--seat-pre:linear-gradient(#50e4d1,#093d4c);--seat-shadow:#03171f;--cabin:linear-gradient(#093d4c,#03171f 60%);}
+
+[data-theme="sakura"]{--accent:#ef92c2;--accent-soft:#ffe0ef;--accent-deep:#81335b;--warm:#ffe0ef;--page:radial-gradient(circle at 80% 12%,#743254,transparent 45%),linear-gradient(160deg,#251022,#160d22);--ocean-a:#81335b;--ocean-b:#251022;--ocean-c:#251022;--land:#81335b;--land-line:#ef92c2;--seat:linear-gradient(#81335b,#251022);--seat-win:linear-gradient(color-mix(in srgb,#ef92c2 45%,#81335b),#81335b);--seat-pre:linear-gradient(#ef92c2,#81335b);--seat-shadow:#251022;--cabin:linear-gradient(#81335b,#251022 60%);}
+
+[data-theme="dune"]{--accent:#e9b767;--accent-soft:#fff0c3;--accent-deep:#79522a;--warm:#fff0c3;--page:repeating-radial-gradient(ellipse at 0 110%,#36281a 0 40px,#2c2116 42px 80px);--ocean-a:#79522a;--ocean-b:#21180f;--ocean-c:#21180f;--land:#79522a;--land-line:#e9b767;--seat:linear-gradient(#79522a,#21180f);--seat-win:linear-gradient(color-mix(in srgb,#e9b767 45%,#79522a),#79522a);--seat-pre:linear-gradient(#e9b767,#79522a);--seat-shadow:#21180f;--cabin:linear-gradient(#79522a,#21180f 60%);}
+
+[data-theme="glacier"]{--accent:#7fd3ff;--accent-soft:#e3f7ff;--accent-deep:#215177;--warm:#e3f7ff;--page:linear-gradient(135deg,transparent 35%,#22435a 36%,transparent 63%),linear-gradient(25deg,#071323,#163a51);--ocean-a:#215177;--ocean-b:#081b30;--ocean-c:#081b30;--land:#215177;--land-line:#7fd3ff;--seat:linear-gradient(#215177,#081b30);--seat-win:linear-gradient(color-mix(in srgb,#7fd3ff 45%,#215177),#215177);--seat-pre:linear-gradient(#7fd3ff,#215177);--seat-shadow:#081b30;--cabin:linear-gradient(#215177,#081b30 60%);}
+
+[data-theme="synth"]{--accent:#fe79dd;--accent-soft:#ffc8f5;--accent-deep:#663397;--warm:#ffc8f5;--page:repeating-linear-gradient(0deg,transparent 0 59px,#75d9ef12 60px),repeating-linear-gradient(90deg,transparent 0 59px,#fe79dd12 60px),radial-gradient(ellipse at 80% 0,#452365,#100b2e 70%);--ocean-a:#663397;--ocean-b:#100b2e;--ocean-c:#100b2e;--land:#663397;--land-line:#fe79dd;--seat:linear-gradient(#663397,#100b2e);--seat-win:linear-gradient(color-mix(in srgb,#fe79dd 45%,#663397),#663397);--seat-pre:linear-gradient(#fe79dd,#663397);--seat-shadow:#100b2e;--cabin:linear-gradient(#663397,#100b2e 60%);}
+
+[data-theme="eclipse"]{--accent:#edc777;--accent-soft:#fff0bc;--accent-deep:#72522b;--warm:#fff0bc;--page:radial-gradient(circle at 80% 16%,#090e1e 0 105px,#edc77788 107px,#d7973533 111px,transparent 150px),linear-gradient(155deg,#0e1630,#03060d);--ocean-a:#72522b;--ocean-b:#090e1e;--ocean-c:#090e1e;--land:#72522b;--land-line:#edc777;--seat:linear-gradient(#72522b,#090e1e);--seat-win:linear-gradient(color-mix(in srgb,#edc777 45%,#72522b),#72522b);--seat-pre:linear-gradient(#edc777,#72522b);--seat-shadow:#090e1e;--cabin:linear-gradient(#72522b,#090e1e 60%);}
+
+/* Bright paper keeps the torn silhouette legible in every theme. */
+.pass-half{background:linear-gradient(145deg,#fffaf1,color-mix(in srgb,var(--accent-soft) 28%,#f4efff));color:#282038;border-color:#e0d8e9;box-shadow:0 20px 50px #0005;}
+.pass .pass-top,.pass .pass-end span,.pass .pass-grid dt{color:#61516f;}
+.pass .pass-brand,.pass .pass-arc{color:#704580;}
+.pass .pass-code{background:repeating-linear-gradient(90deg,#4b3b5c 0 2px,transparent 2px 4px,#4b3b5c 4px 7px,transparent 7px 11px);}
+.pass-stub{border-top-color:#877795;}
+.sound-settings{position:relative;}
+.sound-settings summary{list-style:none;user-select:none;}
+.sound-settings summary::-webkit-details-marker{display:none;}
+.sound-panel{position:absolute;right:0;top:calc(100% + 12px);width:300px;max-height:75vh;overflow:auto;padding:22px;border-radius:22px;background:var(--ocean-c);border:1px solid var(--line);box-shadow:0 20px 60px #0008;z-index:100;}
+.sound-panel h3{margin:0 0 14px;}.sound-panel p{font-size:12px;color:var(--text-dim);}
+.sound-master{display:flex;gap:10px;align-items:center;font-size:14px;}
+.sound-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:16px;font-size:13px;}
+.sound-row output{color:var(--accent-soft);font-variant-numeric:tabular-nums;}
+.sound-row input{grid-column:1/-1;width:100%;accent-color:var(--accent);cursor:pointer;}
+#map{position:relative;overflow:hidden;isolation:isolate;}
+#flightCanvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;}
+.map-credit{position:absolute;bottom:9px;left:14px;color:var(--text-dim);font-size:10px;z-index:4;padding:4px 8px;border-radius:6px;background:var(--ocean-c);}
+.rear-plane{display:none;position:absolute;left:50%;top:50%;width:min(58%,560px);transform:translate(-50%,-35%);z-index:3;filter:drop-shadow(0 14px 20px #0006);pointer-events:none;}
+.rear-plane svg{width:100%;display:block;}
+#map.is-rear{background:linear-gradient(#132443,#69819c 42%,#dae0d4 47%,var(--ocean-b) 60%);perspective:650px;}
+.is-rear #flightCanvas{position:absolute;top:34%;left:-35%;width:170%;height:130%;transform-origin:50% 0;transform:rotateX(48deg);opacity:.85;mask-image:linear-gradient(transparent,#000 12%);}
+.is-rear .rear-plane{display:block;}
+.is-rear::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 15% 45%,#fff3,transparent 35%),radial-gradient(ellipse at 80% 40%,#fff2,transparent 35%);}
+.aircraft-wing{display:none;}
+@media(max-width:540px){.sound-panel{position:fixed;top:120px;right:12px;width:min(320px,calc(100vw - 24px));}.topbar{padding:12px;}.topbar-right{gap:6px;}.pill{padding:8px 11px;font-size:12px;}.rear-plane{width:85%;}.map-tools .round.wide{font-size:11px;padding:0 9px;}}

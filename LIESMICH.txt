@@ -2,7 +2,7 @@
 
 Die ZIP vollständig entpacken und index.html öffnen. Den Ordner vendor neben index.html behalten: Darin liegen die Weltkarte und die benötigten Bibliotheken. Es werden keine Kartenserver und keine API-Keys verwendet.
 
-Klänge: Unter „Klänge“ lassen sich Gesamtlautstärke, Klicks, Kabine, Regen, Vögel und Wald einstellen. „Alle Klänge an“ schaltet den gesamten Mix ein oder aus. Naturklänge werden lokal synthetisiert. Die Einstellungen werden im Browser gespeichert.
+Klänge: Unter „Klänge“ lassen sich Gesamtlautstärke, Klicks, Kabine und Regen & Gewitter einstellen. „Alle Klänge an“ schaltet den gesamten Mix ein oder aus. Das Kabinengeräusch wird lokal synthetisiert; Regen & Gewitter ist eine echte Aufnahme, direkt in assets/regen-gewitter-data.js eingebettet (kein separater Dateizugriff nötig, funktioniert daher zuverlässig auch beim direkten Öffnen der index.html) und loopt nahtlos. Alle Übergänge – auch beim Ausschalten – werden weich überblendet statt abrupt gestoppt. Die Einstellungen werden im Browser gespeichert.
 
 Flug: „Rückansicht“ zeigt das Flugzeug von hinten; „Kartenansicht“ wechselt zurück. Die Weltübersicht enthält Küsten, Länder und Flughafenstädte, keine Straßenkarte.
 

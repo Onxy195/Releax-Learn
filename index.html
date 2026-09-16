@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Relax Learn</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,6 +17,9 @@
     <button class="pill ghost icon" id="soundBtn" type="button" aria-pressed="false" title="Kabinengeräusch">
       <span id="soundIcon">🔈</span><span class="pill-sub" id="soundLabel">Kabine aus</span>
     </button>
+    <details class="sound-settings"><summary class="pill">Klänge</summary><div class="sound-panel"><h3>Dein Klangmix</h3><label class="sound-master"><input id="audioEnabled" type="checkbox"> Alle Klänge an</label><p>Leise mischen, entspannt ankommen.</p>
+<label class="sound-row" for="volume-master"><span>Gesamtlautstärke</span><output id="value-master"></output><input id="volume-master" type="range" min="0" max="100" step="1"></label><label class="sound-row" for="volume-click"><span>Klick · Blob</span><output id="value-click"></output><input id="volume-click" type="range" min="0" max="100" step="1"></label><label class="sound-row" for="volume-cabin"><span>Kabine</span><output id="value-cabin"></output><input id="volume-cabin" type="range" min="0" max="100" step="1"></label><label class="sound-row" for="volume-rain"><span>Regen &amp; Gewitter</span><output id="value-rain"></output><input id="volume-rain" type="range" min="0" max="100" step="1"></label>
+</div></details>
     <button class="pill credits" id="creditsPill" type="button">
       <span class="credit-dot" aria-hidden="true"></span>
       <span id="creditsValue">0</span>
@@ -88,8 +90,6 @@
 
     <div class="cabin-scene">
       <div class="aircraft">
-        <div class="aircraft-wing aircraft-wing-left" aria-hidden="true"></div>
-        <div class="aircraft-wing aircraft-wing-right" aria-hidden="true"></div>
       <div class="cabin" id="cabin">
         <div class="cabin-nose"><span class="nose-label">Cockpit</span></div>
         <div class="seat-grid" id="seatGrid"></div>
@@ -158,16 +158,18 @@
   <!-- 4 — Flug -->
   <section class="view" id="view-flight">
     <div class="flight-map-wrap">
-      <div id="map"></div>
+      <div id="map"><canvas id="flightCanvas" aria-label="Flugkarte mit Ländern, Städten und Flugroute"></canvas><div class="rear-plane" aria-hidden="true">
+<svg viewBox="0 0 600 220"><defs><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#fff"/><stop offset=".45" stop-color="#d8e0f1"/><stop offset="1" stop-color="#697b9d"/></linearGradient></defs>
+<ellipse cx="300" cy="191" rx="144" ry="9" fill="#b6d4ff" opacity=".07"/><path d="M298 107L18 141 7 157 272 143 290 157H310L328 143 593 157 582 141 302 107Z" fill="url(#metal)"/>
+<g fill="#7f91b0" stroke="#dbe6fa" stroke-width="3"><ellipse cx="170" cy="151" rx="21" ry="25"/><ellipse cx="430" cy="151" rx="21" ry="25"/></g><g fill="#23344d"><ellipse cx="170" cy="154" rx="13" ry="17"/><ellipse cx="430" cy="154" rx="13" ry="17"/></g>
+<path d="M300 72C335 73 333 156 300 166C267 156 265 73 300 72Z" fill="url(#metal)"/><path d="M294 122L291 22Q300 6 309 22L306 122Z" fill="#e4eafe"/><path d="M298 110L223 91 211 99 288 130H312L389 99 377 91 302 110Z" fill="url(#metal)"/><ellipse cx="300" cy="145" rx="9" ry="12" fill="#6c7c96"/><circle cx="18" cy="148" r="3" fill="#fb778c"/><circle cx="582" cy="148" r="3" fill="#90fbd1"/></svg></div><span class="map-credit">Natural Earth · Weltübersicht</span></div>
       <div class="map-tools">
         <button class="round" id="zoomIn" type="button" aria-label="Näher heran">+</button>
         <button class="round" id="zoomOut" type="button" aria-label="Weiter weg">−</button>
         <button class="round wide" id="followBtn" type="button">Flugzeug folgen</button>
-        <button class="round wide" id="layerBtn" type="button">Straßenkarte</button>
+        <button class="round wide" id="cameraBtn" type="button" aria-pressed="false">Rückansicht</button>
       </div>
-      <div class="map-fallback" id="mapFallback" hidden>
-        Die Detailkarte ist gerade nicht erreichbar. Die Übersicht und dein Flug bleiben sichtbar.
-      </div>
+
     </div>
 
     <div class="hud">
@@ -222,9 +224,10 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="vendor/d3.min.js"></script>
+<script src="vendor/topojson.min.js"></script>
+<script src="vendor/world.js"></script>
+<script src="assets/regen-gewitter-data.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
