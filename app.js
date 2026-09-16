@@ -1,5 +1,6 @@
 /* Relax Learn — Lernsessions als Flüge.
-   Globus und Flugkarte: mitgelieferte Natural-Earth-Daten. Keine Kartenserver. */
+   Globus: d3-geo + Natural-Earth-Umrisse. Flug: Leaflet-Karte.
+   Ohne Internet läuft alles weiter, nur die Karte bleibt schlicht. */
 
 /* ─────────────── Flughäfen ─────────────── */
 
@@ -80,8 +81,6 @@ const THEMES = [
     dot:"#E056C8", stars:true }
 ];
 
-THEMES.push(...[{"id":"lagoon","name":"Lagune","price":600,"desc":"Türkises Wasser, leuchtende Inseln und ein sanfter Lichtsaum.","dot":"#50e4d1","swatch":"radial-gradient(ellipse at 12% 90%,#176d77,transparent 60%),linear-gradient(145deg,#03171f,#0c3943)"},{"id":"sakura","name":"Sakura","price":700,"desc":"Rosé, pflaumenfarbene Schatten und zarte Blütenlichter.","dot":"#ef92c2","swatch":"radial-gradient(circle at 80% 12%,#743254,transparent 45%),linear-gradient(160deg,#251022,#160d22)"},{"id":"dune","name":"Goldene Dünen","price":850,"desc":"Sandgold und geschwungene Wüstenlinien für ruhige Abende.","dot":"#e9b767","swatch":"repeating-radial-gradient(ellipse at 0 110%,#36281a 0 40px,#2c2116 42px 80px)"},{"id":"glacier","name":"Gletscher","price":1000,"desc":"Kristallblau mit eisigen Lichtflächen und silbernen Akzenten.","dot":"#7fd3ff","swatch":"linear-gradient(135deg,transparent 35%,#22435a 36%,transparent 63%),linear-gradient(25deg,#071323,#163a51)"},{"id":"synth","name":"Neon Lounge","price":1250,"desc":"Elektrisches Pink, Cyan und ein dezentes Retro-Raster.","dot":"#fe79dd","swatch":"repeating-linear-gradient(0deg,transparent 0 59px,#75d9ef12 60px),repeating-linear-gradient(90deg,transparent 0 59px,#fe79dd12 60px),radial-gradient(ellipse at 80% 0,#452365,#100b2e 70%)"},{"id":"eclipse","name":"Eclipse","price":1600,"desc":"Ein goldener Sonnenring über tiefem, ruhigem Mitternachtsblau.","dot":"#edc777","swatch":"radial-gradient(circle at 80% 16%,#090e1e 0 105px,#edc77788 107px,#d7973533 111px,transparent 150px),linear-gradient(155deg,#0e1630,#03060d)"}]);
-
 /* ─────────────── Speicher & Zustand ─────────────── */
 
 const store = {
@@ -135,7 +134,7 @@ function humanMin(min){ const h=Math.floor(min/60), m=min%60;
 function show(id){
   document.querySelectorAll(".view").forEach(v => v.classList.toggle("is-active", v.id===id));
   window.scrollTo(0,0);
-  if(id==="view-flight") requestAnimationFrame(drawFlight);
+  if(id==="view-flight" && leafletMap) setTimeout(()=>leafletMap.invalidateSize(), 60);
   if(id==="view-map") setTimeout(drawGlobe, 40);
 }
 function toast(text){
@@ -148,87 +147,74 @@ function applyTheme(id){
   document.documentElement.dataset.theme = id;
   store.set("theme", id);
   refreshThemeColors();
-  drawFlight();
+  if(tileLayerDark) refreshTiles();
   drawGlobe();
 }
 
 /* ─────────────── Kabinenklang ─────────────── */
 
-const audioPrefs=Object.assign({enabled:true,master:45,click:35,cabin:soundOn?35:0,rain:0,birds:0,forest:0},store.get("audioMix",{}));
-const ambience=(()=>{
-  let ctx,master;const channels={};
-  function buffer(kind){
-    const length=ctx.sampleRate*19,buf=ctx.createBuffer(1,length,ctx.sampleRate),data=buf.getChannelData(0);
-    let brown=0;
-    for(let i=0;i<length;i++){
-      const white=Math.random()*2-1;brown=(brown+.025*white)/1.025;
-      data[i]=kind==='rain'?white*.25:kind==='birds'?0:brown*(kind==='forest'?1.4:3);
+const cabinSound = (() => {
+  let ctx=null, nodes=null, enabled=false, revision=0;
+  function build(){
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const len = ctx.sampleRate*4;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    let last=0;
+    for(let i=0;i<len;i++){                       // braunes Rauschen = tiefes Grundrauschen
+      const white = Math.random()*2-1;
+      last = (last + 0.02*white)/1.02;
+      d[i] = last*3.2;
     }
-    if(kind==='birds'||kind==='forest'){
-      for(let call=0;call<15;call++){
-        const start=Math.floor((.5+Math.random()*17)*ctx.sampleRate),duration=.12+Math.random()*.25;
-        let phase=0;const frequency=1500+Math.random()*1500;
-        for(let j=0;j<duration*ctx.sampleRate && start+j<length;j++){
-          const t=j/ctx.sampleRate,u=t/duration;phase+=2*Math.PI*(frequency+700*Math.sin(u*4))/ctx.sampleRate;
-          data[start+j]+=Math.sin(phase)*Math.sin(Math.PI*u)**2*(kind==='birds'?.12:.065);
-        }
-      }
+    const src = ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+    const lp = ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=420; lp.Q.value=.6;
+    const hp = ctx.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=60;
+    const gain = ctx.createGain(); gain.gain.value=0;
+    // langsames Schwanken, wie Triebwerke unter Last
+    const lfo = ctx.createOscillator(); lfo.frequency.value=0.07;
+    const lfoGain = ctx.createGain(); lfoGain.gain.value=0.014;
+    lfo.connect(lfoGain).connect(gain.gain);
+    // A separate output gain also mutes the modulation connected to gain.gain.
+    const output = ctx.createGain(); output.gain.value=0;
+    src.connect(lp).connect(hp).connect(gain).connect(output).connect(ctx.destination);
+    src.start(); lfo.start();
+    nodes = { gain, output };
+  }
+  return {
+    async on(){
+      enabled=true;
+      const request=++revision;
+      if(!ctx) build();
+      if(ctx.state==="suspended") await ctx.resume();
+      if(!enabled || request!==revision) return;
+      nodes.gain.gain.cancelScheduledValues(ctx.currentTime);
+      nodes.gain.gain.setValueAtTime(0, ctx.currentTime);
+      nodes.gain.gain.linearRampToValueAtTime(0.085, ctx.currentTime+1.4);
+      nodes.output.gain.setValueAtTime(1, ctx.currentTime);
+    },
+    off(){
+      enabled=false; revision++;
+      if(!ctx||!nodes) return;
+      nodes.output.gain.cancelScheduledValues(ctx.currentTime);
+      nodes.output.gain.setValueAtTime(0, ctx.currentTime);
+      nodes.gain.gain.cancelScheduledValues(ctx.currentTime);
+      nodes.gain.gain.setValueAtTime(0, ctx.currentTime);
     }
-    // A seam-free loop avoids clicks between buffers.
-    for(let i=0;i<ctx.sampleRate*.04;i++){const f=i/(ctx.sampleRate*.04);data[i]*=f;data[length-1-i]*=f;}
-    return buf;
-  }
-  function ensure(){
-    if(ctx)return;
-    ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);
-    for(const kind of ['cabin','rain','birds','forest']){
-      const src=ctx.createBufferSource(),gain=ctx.createGain(),filter=ctx.createBiquadFilter();
-      src.buffer=buffer(kind);src.loop=true;filter.type='lowpass';filter.frequency.value=kind==='cabin'?420:kind==='forest'?3600:6500;
-      gain.gain.value=0;src.connect(filter).connect(gain).connect(master);src.start();channels[kind]=gain;
-    }
-    sync();
-  }
-  function sync(){
-    if(!ctx)return;
-    master.gain.cancelScheduledValues(ctx.currentTime);
-    master.gain.setValueAtTime(audioPrefs.enabled?audioPrefs.master/100:0,ctx.currentTime);
-    for(const [kind,gain] of Object.entries(channels)){
-      gain.gain.cancelScheduledValues(ctx.currentTime);
-      if(audioPrefs[kind]===0)gain.gain.setValueAtTime(0,ctx.currentTime);
-      else gain.gain.setTargetAtTime(audioPrefs[kind]/100*.55,ctx.currentTime,.08);
-    }
-  }
-  function wake(){ensure();if(ctx.state==='suspended')ctx.resume().catch(()=>{});sync();}
-  function blob(){
-    if(!audioPrefs.enabled||!audioPrefs.click||!audioPrefs.master)return;
-    wake();const osc=ctx.createOscillator(),gain=ctx.createGain(),now=ctx.currentTime;
-    osc.type='sine';osc.frequency.setValueAtTime(470,now);osc.frequency.exponentialRampToValueAtTime(180,now+.11);
-    gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(audioPrefs.click/100*.20,now+.008);gain.gain.exponentialRampToValueAtTime(.0001,now+.14);
-    osc.connect(gain).connect(master);osc.start(now);osc.stop(now+.15);osc.onended=()=>{osc.disconnect();gain.disconnect();};
-  }
-  return {wake,sync,blob};
+  };
 })();
+
 function paintSound(){
-  soundOn=audioPrefs.cabin>0;
-  $("soundBtn").setAttribute("aria-pressed",String(soundOn&&audioPrefs.enabled));
-  $("soundLabel").textContent=soundOn&&audioPrefs.enabled?"Kabine an":"Kabine aus";
-  $("soundIcon").textContent=soundOn&&audioPrefs.enabled?"🔊":"🔈";
-  $("audioEnabled").checked=audioPrefs.enabled;
-  for(const key of ['master','click','cabin','rain','birds','forest']){$('volume-'+key).value=audioPrefs[key];$('value-'+key).textContent=audioPrefs[key]+' %';}
+  $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+  $("soundIcon").textContent = soundOn ? "🔊" : "🔈";
+  $("soundLabel").textContent = soundOn ? "Kabine an" : "Kabine aus";
 }
-function saveAudio(){store.set('audioMix',audioPrefs);store.set('sound',audioPrefs.cabin>0);ambience.sync();paintSound();}
-$("soundBtn").addEventListener('click',()=>{audioPrefs.cabin=audioPrefs.cabin?0:35;if(audioPrefs.cabin)audioPrefs.enabled=true;ambience.wake();saveAudio();});
-$("audioEnabled").addEventListener('change',e=>{audioPrefs.enabled=e.target.checked;ambience.wake();saveAudio();});
-for(const key of ['master','click','cabin','rain','birds','forest'])$('volume-'+key).addEventListener('input',e=>{audioPrefs[key]=Number(e.target.value);ambience.wake();saveAudio();});
-document.addEventListener('click',e=>{
-  // Labels forward a second click to their input; play only that click.
-  if(e.target.closest('label') && e.target.tagName!=='INPUT')return;
-  ambience.blob();
+$("soundBtn").addEventListener("click", () => {
+  soundOn = !soundOn; store.set("sound", soundOn); paintSound();
+  soundOn ? cabinSound.on() : cabinSound.off();
 });
-document.addEventListener('pointerdown',()=>{if(audioPrefs.enabled)ambience.wake();},{once:true});
-document.addEventListener('keydown',()=>{if(audioPrefs.enabled)ambience.wake();},{once:true});
-
-
+// Browser erlauben Ton erst nach einer Geste
+["pointerdown","keydown"].forEach(ev =>
+  window.addEventListener(ev, function once(){ if(soundOn) cabinSound.on(); window.removeEventListener(ev, once); }, { once:true }));
 
 /* ─────────────── Globus ─────────────── */
 
@@ -272,9 +258,19 @@ function setupGlobe(){
   }
 }
 
-function loadWorld(){
-  const topo=window.WORLD_DATA;
-  if(topo && window.topojson){landFeature=topojson.feature(topo,topo.objects.land);borderFeature=topojson.mesh(topo,topo.objects.countries,(a,b)=>a!==b);}
+async function loadWorld(){
+  if(!window.d3 || !window.topojson) return;
+  try{
+    // 110m statt 50m: für einen ~700px-Globus optisch identisch,
+    // aber ein Bruchteil der Punkte — deutlich schnelleres Neuzeichnen bei jeder Rotation.
+    const res = await fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+    const topo = await res.json();
+    landFeature = topojson.feature(topo, topo.objects.land);
+    borderFeature = topojson.mesh(topo, topo.objects.countries, (a,b)=>a!==b);
+    $("globeHint").textContent = "Ziehen dreht die Erde, Scrollen zoomt. Tippe einen Flughafen an.";
+  }catch{
+    $("globeHint").textContent = "Kartendaten nicht geladen — die Umrisse bleiben grob. Tippe einen Flughafen an.";
+  }
 }
 
 function css(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
@@ -582,63 +578,117 @@ knob.addEventListener("keydown",e=>{
 });
 document.querySelector('[data-back="view-seat"]').addEventListener("click",resetSwipe);
 
-/* Flight canvas uses bundled world geometry, never remote tiles. */
-let follow=true,thirdPerson=store.get('rearCamera',false),flightZoom=1,mapCenter=null,mapDrag=null;
-let cachedFlightSize=[0,0],flightWidth=0,flightHeight=0;
-const flightCanvas=$('flightCanvas'),fx=flightCanvas.getContext('2d');
-function currentLocation(t){
-  if(!flight)return [0,0];
-  const a=AIRPORTS.find(x=>x.code===flight.from),b=AIRPORTS.find(x=>x.code===flight.to);
-  return slerp(a,b,t);
+/* ─────────────── Flug: Leaflet-Karte ─────────────── */
+
+let leafletMap=null, tileLayerDark=null, tileLayerRelief=null, reliefOn=false;
+let planeMarker=null, lineDone=null, linePlan=null, follow=true, pathPts=[], endpointMarkers=[];
+
+const PLANE_SVG = `
+<svg width="74" height="74" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#C9C9D6"/><stop offset="45%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#B9B9C8"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F2F2F6"/><stop offset="100%" stop-color="#BFBFCC"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <path d="M47 55 L5 92 L5 99 L47 82 Z" fill="url(#wing)"/>
+    <path d="M53 55 L95 92 L95 99 L53 82 Z" fill="url(#wing)"/>
+    <path d="M47 104 L26 122 L26 127 L47 118 Z" fill="url(#wing)"/>
+    <path d="M53 104 L74 122 L74 127 L53 118 Z" fill="url(#wing)"/>
+    <g fill="#E4E4EC" stroke="#9A9AA8" stroke-width="0.6">
+      <rect x="16" y="78" width="9" height="15" rx="4.2"/>
+      <rect x="31" y="70" width="9" height="15" rx="4.2"/>
+      <rect x="60" y="70" width="9" height="15" rx="4.2"/>
+      <rect x="75" y="78" width="9" height="15" rx="4.2"/>
+    </g>
+    <path d="M50 3 C57 14 59 34 59 66 C59 96 56 114 50 127 C44 114 41 96 41 66 C41 34 43 14 50 3 Z" fill="url(#body)"/>
+    <path d="M50 100 C52 108 52 116 50 124 C48 116 48 108 50 100 Z" fill="#D8D8E2"/>
+    <path d="M46.5 14 C48 11 52 11 53.5 14 L53 17 L47 17 Z" fill="#1E2436"/>
+    <g fill="#9EA3B5" opacity=".55">
+      <rect x="45.4" y="26" width="1.3" height="26" rx="0.6"/>
+      <rect x="53.3" y="26" width="1.3" height="26" rx="0.6"/>
+    </g>
+  </g>
+</svg>`;
+
+function refreshTiles(){
+  $("map").classList.toggle("map-night",!reliefOn && themeId!=="daylight");
 }
-function paintFollow(){$('followBtn').textContent=follow?'Folgt dem Flug':'Flugzeug folgen';$('followBtn').setAttribute('aria-pressed',String(follow));}
-function setupFlightLayers(){follow=true;mapCenter=null;flightZoom=1;paintFollow();paintCamera();drawFlight();}
-function paintCamera(){
-  $('map').classList.toggle('is-rear',thirdPerson);$('cameraBtn').textContent=thirdPerson?'Kartenansicht':'Rückansicht';
-  $('cameraBtn').setAttribute('aria-pressed',String(thirdPerson));
-  $('followBtn').hidden=thirdPerson;
+function initMap(){
+  if(leafletMap || !window.L) return;
+  leafletMap=L.map("map",{zoomControl:false,worldCopyJump:false,attributionControl:true}).setView([50,10],5);
+  // A vector overview remains underneath if the online tiles cannot load.
+  const overview=landFeature || {type:"FeatureCollection",features:ROUGH_LAND.map(p=>({type:"Feature",geometry:{type:"Polygon",coordinates:[p.concat([p[0]])]}}))};
+  L.geoJSON(overview,{style:{color:css("--land-line"),fillColor:css("--land"),fillOpacity:1,weight:1},interactive:false,pane:"tilePane"}).addTo(leafletMap);
+  tileLayerDark=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:19,keepBuffer:1,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(leafletMap);
+  refreshTiles();
+  leafletMap.on("dragstart",()=>{follow=false;paintFollow();});
+  let failed=0;
+  tileLayerDark.on("loading",()=>{failed=0;});
+  tileLayerDark.on("tileerror",()=>{failed++;$("mapFallback").hidden=false;});
+  tileLayerDark.on("load",()=>{$("mapFallback").hidden=failed===0;});
 }
-$('cameraBtn').addEventListener('click',()=>{thirdPerson=!thirdPerson;store.set('rearCamera',thirdPerson);paintCamera();drawFlight();});
-$('zoomIn').addEventListener('click',()=>{flightZoom=Math.min(4,flightZoom*1.3);drawFlight();});
-$('zoomOut').addEventListener('click',()=>{flightZoom=Math.max(.35,flightZoom/1.3);drawFlight();});
-$('followBtn').addEventListener('click',()=>{follow=!follow;paintFollow();drawFlight();});
-flightCanvas.addEventListener('pointerdown',e=>{if(thirdPerson)return;follow=false;paintFollow();mapCenter=mapCenter||currentLocation(progress().t);mapDrag=[e.clientX,e.clientY];flightCanvas.setPointerCapture(e.pointerId);});
-flightCanvas.addEventListener('pointermove',e=>{
-  if(!mapDrag)return;const scale=flightWidth*.75*flightZoom;
-  mapCenter[0]-=(e.clientX-mapDrag[0])/scale*180/Math.PI;mapCenter[1]=Math.max(-80,Math.min(80,mapCenter[1]+(e.clientY-mapDrag[1])/scale*180/Math.PI));
-  mapDrag=[e.clientX,e.clientY];drawFlight();
-});
-['pointerup','pointercancel'].forEach(type=>flightCanvas.addEventListener(type,()=>{mapDrag=null;}));
-function drawFlight(){
-  if(!flight||!$('view-flight').classList.contains('is-active')||!window.d3)return;
-  const rect=$('map').getBoundingClientRect(),w=rect.width,h=rect.height,d=Math.min(devicePixelRatio||1,2);
-  if(w<1||h<1)return;flightWidth=w;flightHeight=h;
-  if(cachedFlightSize[0]!==w*d||cachedFlightSize[1]!==h*d){flightCanvas.width=w*d;flightCanvas.height=h*d;cachedFlightSize=[w*d,h*d];}
-  fx.setTransform(d,0,0,d,0,0);fx.clearRect(0,0,w,h);
-  const t=progress().t,loc=currentLocation(t);if(follow||thirdPerson||!mapCenter)mapCenter=loc.slice();
-  const pr=d3.geoMercator().rotate([-mapCenter[0],0]).center([0,mapCenter[1]]).translate([w/2,h/2]).scale(w*.75*flightZoom);
-  const path=d3.geoPath(pr,fx),a=AIRPORTS.find(x=>x.code===flight.from),b=AIRPORTS.find(x=>x.code===flight.to);
-  const prev=currentLocation(Math.max(0,t-.0001)),next=currentLocation(Math.min(1,t+.0001)),p1=pr(prev),p2=pr(next);
-  const heading=Math.atan2(p2[1]-p1[1],p2[0]-p1[0])+Math.PI/2;
-  fx.fillStyle=themeColors.oceanB;fx.fillRect(0,0,w,h);fx.save();
-  if(thirdPerson){fx.translate(w/2,h/2);fx.rotate(-heading);fx.translate(-w/2,-h/2);}
-  if(landFeature){fx.beginPath();path(landFeature);fx.fillStyle=themeColors.land;fx.fill();fx.strokeStyle=themeColors.landLine;fx.lineWidth=.8;fx.stroke();}
-  if(borderFeature){fx.beginPath();path(borderFeature);fx.strokeStyle=themeColors.landLine;fx.globalAlpha=.35;fx.lineWidth=.5;fx.stroke();fx.globalAlpha=1;}
-  fx.beginPath();path({type:'LineString',coordinates:[[a.lon,a.lat],[b.lon,b.lat]]});fx.strokeStyle=themeColors.accentSoft;fx.lineWidth=2;fx.setLineDash([6,8]);fx.stroke();fx.setLineDash([]);
-  fx.beginPath();path({type:'LineString',coordinates:[[a.lon,a.lat],loc]});fx.lineWidth=3;fx.stroke();
-  if(!thirdPerson)for(const city of AIRPORTS){const p=pr([city.lon,city.lat]);if(p[0]<0||p[0]>w||p[1]<0||p[1]>h)continue;fx.fillStyle=themeColors.warm;fx.beginPath();fx.arc(p[0],p[1],2.5,0,Math.PI*2);fx.fill();fx.font='11px Segoe UI';fx.fillStyle=themeColors.text;fx.fillText(city.city,p[0]+7,p[1]-5);}
-  fx.restore();
-  if(!thirdPerson){
-    const p=pr(loc);fx.save();fx.translate(p[0],p[1]);fx.rotate(heading);fx.shadowColor='#0008';fx.shadowBlur=12;
-    const metal=fx.createLinearGradient(-10,0,10,0);metal.addColorStop(0,'#9eabc7');metal.addColorStop(.5,'#fff');metal.addColorStop(1,'#aebad1');fx.fillStyle=metal;
-    fx.beginPath();fx.moveTo(0,-29);fx.bezierCurveTo(6,-24,5,-7,5,1);fx.lineTo(28,16);fx.lineTo(28,21);fx.lineTo(4,12);fx.lineTo(3,23);fx.lineTo(12,29);fx.lineTo(12,32);fx.lineTo(0,28);fx.lineTo(-12,32);fx.lineTo(-12,29);fx.lineTo(-3,23);fx.lineTo(-4,12);fx.lineTo(-28,21);fx.lineTo(-28,16);fx.lineTo(-5,1);fx.bezierCurveTo(-5,-7,-6,-24,0,-29);fx.fill();fx.restore();
+
+function paintFollow(){
+  $("followBtn").setAttribute("aria-pressed", String(follow));
+  $("followBtn").textContent = follow ? "Folgt dem Flug" : "Flugzeug folgen";
+}
+
+function buildFlightPath(a, b){
+  const pts=[]; let prevLon=null;
+  for(let i=0;i<=240;i++){
+    let [lon,lat] = slerp(a,b,i/240);
+    if(prevLon!==null){                          // Datumsgrenze glatt überschreiten
+      while(lon - prevLon > 180) lon -= 360;
+      while(lon - prevLon < -180) lon += 360;
+    }
+    prevLon = lon;
+    pts.push([lat,lon]);
   }
-}
-function flightFrame(){
-  drawFlight();requestAnimationFrame(flightFrame);
+  return pts;
 }
 
+function setupFlightLayers(){
+  initMap();
+  if(!leafletMap) return;
+  const a = AIRPORTS.find(x=>x.code===flight.from), b = AIRPORTS.find(x=>x.code===flight.to);
+  pathPts = buildFlightPath(a,b);
 
+  [lineDone, linePlan, planeMarker, ...endpointMarkers].forEach(l => { if(l) leafletMap.removeLayer(l); });
+  linePlan = L.polyline(pathPts, { color: css("--accent-soft"), weight:2.5, opacity:.5, dashArray:"7 9" }).addTo(leafletMap);
+  lineDone = L.polyline([pathPts[0]], { color: css("--accent"), weight:4, opacity:.95 }).addTo(leafletMap);
+
+  endpointMarkers=[];
+  endpointMarkers.push(L.circleMarker(pathPts[0], { radius:5, color:css("--warm"), fillColor:css("--warm"), fillOpacity:1 })
+    .bindTooltip(a.city, { permanent:false }).addTo(leafletMap));
+  endpointMarkers.push(L.circleMarker(pathPts[pathPts.length-1], { radius:5, color:css("--accent-soft"), fillColor:css("--accent-soft"), fillOpacity:1 })
+    .bindTooltip(b.city, { permanent:false }).addTo(leafletMap));
+
+  const icon = L.divIcon({ className:"plane-icon", html:`<div class="plane-rot">${PLANE_SVG}</div>`, iconSize:[74,74], iconAnchor:[37,37] });
+  planeMarker = L.marker(pathPts[0], { icon, interactive:false, zIndexOffset:1000 }).addTo(leafletMap);
+  follow = true; paintFollow();
+  leafletMap.setView(pathPts[0], 7);
+  setTimeout(()=>leafletMap.invalidateSize(), 80);
+}
+
+$("zoomIn").addEventListener("click", ()=>leafletMap && leafletMap.zoomIn());
+$("zoomOut").addEventListener("click", ()=>leafletMap && leafletMap.zoomOut());
+$("followBtn").addEventListener("click", ()=>{
+  follow = !follow; paintFollow();
+  if(follow && planeMarker) leafletMap.panTo(planeMarker.getLatLng());
+});
+$("layerBtn").addEventListener("click", ()=>{
+  if(!leafletMap) return;
+  reliefOn=!reliefOn;refreshTiles();
+  $("layerBtn").textContent=reliefOn?"Nachtkarte":"Straßenkarte";
+  $("layerBtn").setAttribute("aria-pressed",String(reliefOn));
+});
 
 /* ─────────────── Flugablauf ─────────────── */
 
@@ -685,9 +735,24 @@ function update(){
   const earned = Math.round(t * creditsFor(flight.min, /[AD]$/.test(flight.seat)));
   $("hudEarned").textContent = `${earned} Credits gesammelt`;
 
-  const loc=currentLocation(t);
-  const over=nearestCity(loc[1],loc[0]);
-  $("hudOver").textContent=over?`gerade über ${over.city}`:"";
+  if(leafletMap && pathPts.length){
+    const position=t*(pathPts.length-1);
+    const idx=Math.min(pathPts.length-2,Math.floor(position));
+    const fraction=position-idx;
+    // Unrounded Mercator coordinates avoid heading jitter and follow the drawn segment exactly.
+    const p1=leafletMap.project(pathPts[idx],10), p2=leafletMap.project(pathPts[idx+1],10);
+    const point=L.point(p1.x+(p2.x-p1.x)*fraction,p1.y+(p2.y-p1.y)*fraction);
+    const location=leafletMap.unproject(point,10),cur=[location.lat,location.lng];
+    planeMarker.setLatLng(cur);
+    const ang=Math.atan2(p2.y-p1.y,p2.x-p1.x)*180/Math.PI+90;
+    const rotEl=planeMarker.getElement()?.querySelector(".plane-rot");
+    if(rotEl)rotEl.style.transform=`rotate(${ang.toFixed(3)}deg)`;
+    lineDone.setLatLngs([...pathPts.slice(0,idx+1),cur]);
+    if(follow) leafletMap.panTo(cur, { animate:false });
+
+    const over = nearestCity(cur[0], ((cur[1]+540)%360)-180);
+    $("hudOver").textContent = over ? `gerade über ${over.city}` : "";
+  }
 
   if(t>=1) land();
 }
@@ -783,13 +848,13 @@ $("shopBack").addEventListener("click", ()=>show(flight?"view-flight":"view-map"
 
 /* ─────────────── Start ─────────────── */
 
-window.addEventListener("resize", ()=>{ setupGlobe(); drawFlight(); });
+window.addEventListener("resize", ()=>{ setupGlobe(); if(leafletMap) leafletMap.invalidateSize(); });
 
 (function init(){
   document.documentElement.dataset.theme = themeId;
   refreshThemeColors();
   paintCredits(); paintRoute(); paintHistory(); paintSound(); paintFollow();
-  setupGlobe(); loadWorld(); loopGlobe(); flightFrame();
+  setupGlobe(); loadWorld(); loopGlobe();
 
   const saved = store.get("flight", null);
   if(saved){
