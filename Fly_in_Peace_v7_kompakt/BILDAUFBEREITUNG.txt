@@ -1,0 +1,19 @@
+Bildaufbereitung – Fly in Peace v5
+
+Verfahren: integriertes ImageGen-Bildbearbeitungswerkzeug; keine bloße Größeninterpolation. Sechs ältere Standbilder wurden als größere, nachbearbeitete Fassungen rekonstruiert. Kleine Motivdetails können abweichen. Die neuen GIFs sind unveränderte Originaldateien (800×482 und 500×288); die animierten Hintergründe wurden nicht künstlich als 4K deklariert. Die neue Abendrast-Grafik bleibt ebenfalls im Original.
+
+Dateien im ZIP unter assets/backgrounds/: waldweg-klar.png, bergwiese-klar.png, wolken-klar.png, lichtung-klar.png, sommerwiese-klar.png, am-meer-klar.png.
+
+Gemeinsamer Prompt je Originalbild (NAME durch den Dateinamen ersetzt):
+Edit target: attached NAME background. Faithful high resolution restoration for full-screen website wallpaper. Produce ONE clean high-resolution landscape image at 2560 pixels wide or greater if supported, retain original aspect ratio. Preserve the EXACT scene composition, subject placements, palette, lighting and art style; do not redesign or add elements. Remove JPEG artifacts and fuzzy edges, reconstruct coherent fine detail and crisp deliberate pixel-art edges where present. For the mountain meadow preserve voxel style but reduce excessive blur so flowers and mountains have clear detail. No text, no UI, no border. This is restoration of the supplied background, not a different scene. Save the output file for integration into the website.
+
+Finaler Korrektur-Prompt für Wolken (die erste Fassung hatte störende dunkle Ränder und wurde verworfen):
+Restore this exact small pixel-art sky-and-grass background into a crisp large landscape bitmap (aim 2560px wide). Preserve the positions of its three cloud groups, three flat turquoise sky bands and grass/earth strip. Use clean uniform flat colors and deliberate crisp pixel edges. Absolutely NO grain, NO mottling, NO noise, NO black or dark corner vignette, NO transparency, NO painterly shading. Sky must stay flat turquoise to every edge. The earth at the bottom must stay uniformly brown right to the lower edge. Do not introduce new objects or redesign the composition. Output one image.
+
+Erreichte Auflösung (die im Prompt erbetene Zielgröße wurde vom Werkzeug nicht bei jedem Bild geliefert):
+Waldweg 1672×941
+Bergwiese 1677×938
+Lichtung 1672×941
+Sommerwiese 1672×941
+Am Meer 1586×992
+Wolken 1983×793

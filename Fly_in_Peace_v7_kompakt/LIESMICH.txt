@@ -1,0 +1,46 @@
+Fly in Peace – Version 7
+
+STARTEN
+ZIP vollständig entpacken und index.html öffnen. Alle Unterordner beibehalten. Die Flugkarte benötigt Internet für Leaflet und Esri; Bilder, GIF, Startweltkugel und Haustiere liegen lokal bei.
+
+HINTERGRÜNDE UND STUDIO
+15 Designs, maximal 1.000 Credits. Die sechs älteren Standbilder wurden mit integrierter Bildbearbeitung als klarere, größere Fassungen aufbereitet (etwa 1.600–2.000 Pixel Breite). Das sind Rekonstruktionen, keine wiedergefundenen Originaldetails; kleine Details können abweichen. Die drei GIFs bleiben animiert in ihrer Originalauflösung.
+Neu: Höhlenbach (850 Credits), Am Teich (900 Credits) und Abendrast (1.000 Credits).
+Am Meer kostet jetzt 700 statt 1.200 Credits. Bisherige Käufer erhalten die Differenz einmalig gutgeschrieben; vorhandene Käufe bleiben erhalten.
+Die beiden erklärenden Texte unter Studio und Haustiere wurden entfernt. Dein Studio ist größer gesetzt.
+Die Fokus-Uhr hat eine fast deckende Fläche mit nur noch sehr geringer Transparenz für gut lesbaren Text.
+Lila, Weiß und Schwarz bleiben kostenlos, Lila bleibt Standard. Hintergründe werden ohne Kachelung angezeigt und abhängig vom Bildschirmformat beschnitten.
+
+KURZSTRECKEN
+Die Mindestdauer neuer Flüge beträgt 20 Minuten. Auf der Startseite lassen sich Helsinki–Tallinn und Amsterdam–Brüssel direkt als 20-Minuten-Session auswählen. Bereits gespeicherte Flüge behalten ihre gebuchte Dauer.
+
+SITZPLATZ UND TICKET
+Freie Sitzplätze haben unabhängig von Reihe und Klasse denselben Grundfarbton. Belegte und ausgewählte Sitze sind weiterhin erkennbar. Das Boarding-Ticket und sein Wischregler sind gemeinsam zentriert und passen sich dem gewählten Design an. Boarding funktioniert per Wischen oder per Tastatur mit Enter/Leertaste auf dem Regler.
+
+FLUGANSICHT
+Oben zwischen Flugkarte und Fokus-Uhr wechseln. Die Ansicht wird gespeichert, der Flug läuft in beiden Ansichten gleich weiter. Pause, Fortsetzen und Abbrechen bleiben möglich.
+Die Kartenverfolgung bewegt die Karte kontinuierlich mit Subpixel-Positionen, statt sie alle 120 Millisekunden springen zu lassen. Mausrad, Zoomtasten und Ziehen bleiben nutzbar. Ziehen beendet das Folgen; mit Flugzeug folgen wird es wieder aktiviert. Die Weltgrenzen und die Begrenzung beim Herauszoomen bleiben erhalten.
+
+SOUND
+Nur Gesamtlautstärke, Blob-Klick und Kabinengeräusch. Regen und Gewitter sind vollständig entfernt, einschließlich früher gespeicherter Lautstärkewerte. Ein Klick außerhalb oder Escape schließt das Sound-Menü.
+
+HAUSTIERE
+Schlange Milo, Schnecke Mika, blauer Schleim Blu, Ente Pippa und Geist Boo kosten je einmalig 500 Credits. Sie laufen langsam unten entlang, drehen auch unterwegs um und machen kurze Pausen. Hochziehen und loslassen funktioniert mit Maus oder Finger. Mit Tab auswählen, per Leertaste/Enter hochheben, mit Pfeiltasten bewegen und wieder mit Leertaste/Enter fallen lassen. Im Studio lassen sie sich kostenlos schlafen legen oder aufwecken.
+Der lila Bonus-Schleim bleibt ebenfalls erhalten: 20 Sekunden sichtbar, danach fünf Minuten Pause, einmalig 200 Credits pro Fund.
+
+GUTHABEN UND SPEICHER
+Die einmaligen 5.000 Test-Credits aus der vorherigen Version bleiben enthalten. Guthaben, Käufe und Einstellungen liegen im Browser-Speicher. Ein anderer Browser, ein neuer Dateipfad oder gelöschte Browserdaten können einen neuen Speicherbereich erzeugen. Zum Beibehalten des Spielstands die aktualisierten Dateien am bisherigen Speicherort ersetzen.
+
+DATEN UND BILDER
+Natural Earth (Public Domain), verteilt über world-atlas. d3- und topojson-Lizenzen im Ordner vendor. Flugkarte: Esri über Leaflet. Flugzeug und Hintergrundvorlagen einschließlich GIF wurden vom Nutzer bereitgestellt. Sechs ältere Standbilder wurden mit integrierter Bildbearbeitung aufbereitet. Die neu hinzugefügten GIFs und Abendrast wurden unverändert übernommen. Details stehen in BILDAUFBEREITUNG.txt.
+
+
+NEU IN VERSION 6
+Abendlicht (850 Credits) ergänzt die Designs. Beide neuen Haustiere nutzen die mitgelieferten animierten GIFs; der grüne Hintergrund des Geistes wird bei der Darstellung ausgeblendet.
+Die Sitzplatzauswahl passt ohne Scrollen in die Bildschirmhöhe. Auf großen Bildschirmen stehen Überschrift und Weiter-Button links neben der Kabine, auf Handys darüber und darunter.
+Seitenwechsel gleiten weich ineinander. Die Systemeinstellung für reduzierte Bewegung wird respektiert.
+Neben Sound steht Blur: 0–24 Pixel Hintergrundunschärfe, mit weichem Übergang und gespeicherter Einstellung. Text und Bedienelemente bleiben scharf.
+Flüge bringen 200 Credits pro Stunde, am Fenster 220. Beim Abbrechen werden die bis dahin verdienten ganzen Credits gutgeschrieben. Pausenzeiten zählen nicht mit.
+
+NEU IN VERSION 7
+Drinnen ist entfernt. Bereits bezahlte 900 Credits werden zurückerstattet; ein aktives Drinnen-Design wechselt zu Lila. Alle Designs stehen nach aufsteigendem Preis in gleich großen Karten: drei pro Reihe auf großen Bildschirmen, angepasst auf schmalen Bildschirmen.
