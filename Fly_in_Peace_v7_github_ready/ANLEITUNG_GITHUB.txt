@@ -1,0 +1,41 @@
+Anleitung: Fly in Peace bei GitHub hochladen
+=============================================
+
+WICHTIGSTER PUNKT
+------------------
+Bitte NICHT eine ZIP-Datei direkt ins Repository hochladen! GitHub packt
+ZIP-Dateien nicht automatisch aus. Liegt nur eine ZIP im Repository, findet
+GitHub Pages keine index.html und so gut wie nichts lädt - genau das
+Problem, das du gerade siehst.
+
+SCHRITT FÜR SCHRITT
+--------------------
+1. Diese ZIP-Datei auf deinem Rechner entpacken (Rechtsklick -> "Alle
+   extrahieren" / "Entpacken").
+2. Auf github.com ein neues, leeres Repository anlegen (z. B.
+   "fly-in-peace"). Kein README, keine .gitignore anhaken.
+3. Im leeren Repository auf "Add file" -> "Upload files" klicken.
+4. WICHTIG: Nicht die ZIP hochladen, sondern den entpackten INHALT.
+   Am einfachsten: den entpackten Ordner öffnen, ALLES markieren
+   (index.html, styles.bundle.css, app.bundle.js, die Ordner assets/
+   und vendor/, die Textdateien, sowie die unsichtbare Datei .nojekyll)
+   und direkt per Drag & Drop in das Upload-Fenster ziehen. Der Browser
+   übernimmt dabei auch die Unterordner automatisch.
+5. Unten "Commit changes" klicken und warten, bis der Upload fertig ist
+   (bei 47 Dateien / ca. 14 MB dauert das nur kurz).
+6. In den Repository-Einstellungen (Settings) den Punkt "Pages" öffnen,
+   als Quelle den Branch "main" und Ordner "/ (root)" wählen, speichern.
+7. Nach ein bis zwei Minuten ist die Seite unter
+   https://DEINNUTZERNAME.github.io/REPO-NAME/ erreichbar.
+
+WARUM DIE DATEI JETZT ANDERS IST
+----------------------------------
+- Es wurde nur eine Datei ergänzt: .nojekyll (leer). Sie verhindert, dass
+  GitHub Pages die Seite fälschlich über Jekyll verarbeitet, wobei
+  gelegentlich Dateien oder Ordner verschluckt werden.
+- Alle Bild-, Sound- und Skriptpfade in index.html, app.bundle.js und
+  styles.bundle.css wurden geprüft: Sie sind bereits relativ und in der
+  richtigen Groß-/Kleinschreibung, das war also nicht die Ursache.
+- Die Flugkarte lädt weiterhin Leaflet und die Kartenkacheln von externen
+  Servern (unpkg, Esri) - dafür braucht die Seite wie schon vorher aktives
+  Internet, egal ob lokal oder bei GitHub gehostet.

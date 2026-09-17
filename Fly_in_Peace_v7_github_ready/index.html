@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="aurora">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fly in Peace</title>
+<link rel="stylesheet" href="styles.bundle.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body><svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="pet-green-key" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -2 1 0 1" result="mask"/><feComposite in="SourceGraphic" in2="mask" operator="in"/></filter></defs></svg>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">Fly&nbsp;in&nbsp;Peace</span>
+  </div>
+  <div class="topbar-right">
+    <details class="sound-settings"><summary class="pill">♫ <span>Sound</span></summary><div class="sound-panel"><h3>Dein Klangmix</h3><label class="sound-master"><input id="audioEnabled" type="checkbox"> Alle Klänge an</label><p>Leise mischen, entspannt ankommen.</p>
+<label class="sound-row" for="volume-master"><span>Gesamtlautstärke</span><output id="value-master"></output><input id="volume-master" type="range" min="0" max="100" step="1"></label><label class="sound-row" for="volume-click"><span>Klick · Blob</span><output id="value-click"></output><input id="volume-click" type="range" min="0" max="100" step="1"></label><label class="sound-row" for="volume-cabin"><span>Kabine</span><output id="value-cabin"></output><input id="volume-cabin" type="range" min="0" max="100" step="1"></label>
+
+</div></details>
+    <details class="blur-settings"><summary class="pill">Blur</summary><div class="sound-panel"><h3>Hintergrund</h3><label class="sound-row" for="backgroundBlur"><span>Weichzeichnen</span><output id="blurValue">0 px</output><input id="backgroundBlur" type="range" min="0" max="24" step="1" value="0"></label></div></details>
+    <button class="pill credits" id="creditsPill" type="button">
+      <span class="credit-dot" aria-hidden="true"></span>
+      <span id="creditsValue">0</span>
+      <span class="pill-sub">Credits</span>
+    </button>
+    <button class="pill ghost" id="openHangar" type="button">Studio</button>
+  </div>
+</header>
+
+<main id="stage">
+
+  <!-- 1 — Weltkugel -->
+  <section class="view is-active" id="view-map">
+    <div class="globe-wrap">
+      <canvas id="globe" aria-label="Weltkugel mit Flughäfen"></canvas>
+      <div class="globe-tools">
+        <button class="round" id="globeIn" type="button" aria-label="Näher heran">+</button>
+        <button class="round" id="globeOut" type="button" aria-label="Weiter weg">−</button>
+        <button class="round" id="globeHome" type="button" aria-label="Ansicht zurücksetzen">⤾</button>
+      </div>
+      <p class="globe-hint" id="globeHint">Ziehen dreht die Erde, Scrollen zoomt. Tippe einen Flughafen an.</p>
+    </div>
+
+    <aside class="panel route-panel">
+      <h1 class="panel-title">Wohin lernst du heute?</h1>
+      <p class="panel-lead">Jede Strecke ist eine Lernsession. Je weiter du fliegst, desto länger bleibst du dran.</p>
+
+      <div class="short-flights"><span>Eine kleine Auszeit · 20 Minuten</span><div><button type="button" data-short-route="HEL-TLL">Helsinki → Tallinn</button><button type="button" data-short-route="AMS-BRU">Amsterdam → Brüssel</button></div></div>
+      <div class="search">
+        <input type="search" id="search" placeholder="Stadt suchen, z. B. Helsinki" autocomplete="off">
+        <div class="results" id="results" hidden></div>
+      </div>
+
+      <ol class="pick-list">
+        <li class="pick" id="pickFrom">
+          <span class="pick-role">Start</span>
+          <span class="pick-code">—</span>
+          <span class="pick-city">noch offen</span>
+        </li>
+        <li class="pick" id="pickTo">
+          <span class="pick-role">Ziel</span>
+          <span class="pick-code">—</span>
+          <span class="pick-city">noch offen</span>
+        </li>
+      </ol>
+
+      <div class="route-figures" id="routeFigures" hidden>
+        <div class="figure"><strong id="figDist">—</strong><span>Kilometer</span></div>
+        <div class="figure"><strong id="figTime">—</strong><span>Lernzeit</span></div>
+        <div class="figure"><strong id="figCred">—</strong><span>Credits</span></div>
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn primary" id="toSeats" type="button" disabled>Flug auswählen</button>
+        <button class="btn quiet" id="resetRoute" type="button">Zurücksetzen</button>
+      </div>
+
+      <div class="last-flights" id="lastFlights"></div>
+    </aside>
+  </section>
+
+  <!-- 2 — Sitzplatz -->
+  <section class="view" id="view-seat">
+    <div class="cabin-head">
+      <button class="btn quiet back" data-back="view-map" type="button">Zurück zur Karte</button>
+      <h2 id="seatHeadline">Such dir einen Platz</h2>
+      <p class="sub" id="seatSub">Am Fenster lernt es sich schöner — das gibt zehn Prozent mehr Credits.</p>
+    </div>
+
+    <div class="cabin-scene">
+      <div class="aircraft">
+      <div class="cabin" id="cabin">
+        <div class="cabin-nose"><span class="nose-label">Cockpit</span></div>
+        <div class="seat-grid" id="seatGrid"></div>
+        <div class="cabin-tail"><span class="tail-label">Galley</span><span class="tail-label">WC</span></div>
+      </div>
+      </div>
+    </div>
+
+    <div class="seat-bar">
+      <div class="seat-chosen">
+        <span id="seatChosen">Kein Platz gewählt</span>
+        <span class="seat-note" id="seatNote"></span>
+      </div>
+      <button class="btn primary" id="toPass" type="button" disabled>Weiter zum Ticket</button>
+    </div>
+  </section>
+
+  <!-- 3 — Boarding Pass -->
+  <section class="view" id="view-pass">
+    <div class="pass-scene">
+      <div class="pass-holder" id="passHolder">
+        <article class="pass" id="pass">
+          <div class="pass-half pass-main">
+            <header class="pass-top">
+              <span class="pass-brand">Fly in Peace</span>
+              <span class="pass-class" id="passClass">Economy</span>
+            </header>
+            <div class="pass-route">
+              <div class="pass-end">
+                <strong id="passFrom">—</strong>
+                <span id="passFromCity"></span>
+              </div>
+              <div class="pass-arc" aria-hidden="true">
+                <svg viewBox="0 0 120 40"><path d="M4 32 C 40 2, 80 2, 116 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 4"/></svg>
+              </div>
+              <div class="pass-end right">
+                <strong id="passTo">—</strong>
+                <span id="passToCity"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pass-half pass-stub">
+            <dl class="pass-grid">
+              <div><dt>Sitz</dt><dd id="passSeat">—</dd></div>
+              <div><dt>Flugzeit</dt><dd id="passTime">—</dd></div>
+              <div><dt>Gate</dt><dd id="passGate">—</dd></div>
+              <div><dt>Flug</dt><dd id="passNo">—</dd></div>
+            </dl>
+            <div class="pass-code" aria-hidden="true"></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="swipe" id="swipe">
+        <span class="swipe-label" id="swipeLabel">Zum Boarding wischen</span>
+        <button class="swipe-knob" id="swipeKnob" type="button" aria-label="Zum Boarding wischen">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h12M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <button class="btn quiet back" data-back="view-seat" type="button">Sitzplatz ändern</button>
+    </div>
+  </section>
+
+  <!-- 4 — Flug -->
+  <section class="view" id="view-flight">
+    <div class="flight-view-switch" role="group" aria-label="Flugansicht wählen">
+      <button id="showFlightMap" type="button" aria-pressed="true">Flugkarte</button>
+      <button id="showFocusClock" type="button" aria-pressed="false">Fokus-Uhr</button>
+    </div>
+    <div id="focusPanel" class="focus-panel">
+      <p class="focus-brand">FLY IN PEACE</p>
+      <h1>Dein Moment über den Wolken.</h1>
+      <p id="focusRoute" class="focus-route"></p>
+      <div id="focusProgress" class="focus-progress" role="progressbar" aria-label="Flugfortschritt" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="focusProgressFill"></div></div>
+      <div id="focusRemain" class="focus-remain">00:00</div><p id="focusState" class="focus-state">bis zur Landung</p>
+    </div>
+    <div class="flight-map-wrap">
+      <div id="mapStage">
+        <div id="map" aria-label="Flugkarte mit Flugroute"></div>
+        <span class="map-credit">Kartendaten © Esri</span>
+        <p class="map-fallback" id="mapFallback" hidden>Keine Verbindung zu den Kartenkacheln – Route wird ohne Hintergrundkarte angezeigt.</p>
+      </div>
+      <div class="map-tools">
+        <button class="round" id="zoomIn" type="button" aria-label="Näher heran">+</button>
+        <button class="round" id="zoomOut" type="button" aria-label="Weiter weg">−</button>
+        <button class="round wide" id="followBtn" type="button">Flugzeug folgen</button>
+      </div>
+
+    </div>
+
+    <div class="hud">
+      <div class="hud-left">
+        <span class="hud-route" id="hudRoute">—</span>
+        <span class="hud-seat" id="hudSeat"></span>
+      </div>
+      <div class="hud-clock">
+        <span id="hudRemain">00:00</span>
+        <small>bis zur Landung</small>
+      </div>
+      <div class="hud-right">
+        <span class="hud-over" id="hudOver"></span>
+        <span class="hud-earned" id="hudEarned">0 Credits gesammelt</span>
+      </div>
+    </div>
+
+    <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="flight-actions">
+      <button class="btn quiet" id="pauseBtn" type="button">Pause</button>
+      <button class="btn quiet danger" id="abortBtn" type="button">Flug abbrechen</button>
+    </div>
+  </section>
+
+  <!-- 5 — Ankunft -->
+  <section class="view" id="view-arrival">
+    <div class="arrival">
+      <p class="arrival-kicker">Gelandet</p>
+      <h2 id="arrivalCity">—</h2>
+      <p class="arrival-line" id="arrivalLine">—</p>
+      <div class="arrival-credits"><span id="arrivalCredits">+0</span><small>Credits</small></div>
+      <div class="arrival-actions">
+        <button class="btn primary" id="arrivalHangar" type="button">Ins Studio</button>
+        <button class="btn quiet" id="arrivalAgain" type="button">Nächster Flug</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 — Design-Studio -->
+  <section class="view" id="view-shop">
+    <div class="shop-head">
+      <button class="btn quiet back" id="shopBack" type="button">Zurück</button>
+      <p class="studio-kicker">FLY IN PEACE</p><h2>Dein Studio</h2>
+    </div>
+    <div class="collection-head"><h3>Die Design-Kollektion</h3><span>15 Designs · 0–1.000 Credits</span></div><div class="themes" id="themes"></div><div class="collection-head"><h3>Haustiere</h3><span>Je 500 Credits · dauerhaft freischalten</span></div><div id="companions" class="companion-grid"></div>
+  </section>
+
+</main>
+
+<dialog id="designPreview" class="design-preview"><button id="closePreview" class="pill preview-close" type="button" aria-label="Vorschau schließen">✕ Schließen</button><div class="preview-scene"><img id="previewArt" alt="Designvorschau"><div class="preview-sample"><span>FLY IN PEACE</span><h3>Dein Moment über den Wolken.</h3><p>Berlin → Helsinki · Fensterplatz 1A</p><div class="preview-progress"></div><strong>42:08</strong><small>bis zur Landung</small></div></div><div class="preview-caption"><div><h2 id="previewTitle"></h2><p id="previewDescription"></p></div><span id="previewPrice"></span></div></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="vendor/d3.min.js"></script>
+<script src="vendor/topojson.min.js"></script>
+<script src="vendor/world.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.bundle.js"></script>
+</body>
+</html>
